@@ -72,8 +72,10 @@ func (j *Executor) wait() {
 	_ = j.out.Close()
 }
 
-// Path will always be an absolute path
-func createMPVCommand(deviceName string, filename string, socketName string) []string {
+// createMPVCommand builds the argv to launch the single, persistent mpv
+// process. mpv starts idle (no file); tracks are loaded later over the IPC, so
+// there is no per-track %f placeholder - only %d (device) and %s (ipc socket).
+func createMPVCommand(deviceName string, socketName string) []string {
 	// Parse the template structure using shell parsing to handle quoted arguments
 	templateArgs, err := shellquote.Split(conf.Server.MPVCmdTemplate)
 	if err != nil {
@@ -84,7 +86,6 @@ func createMPVCommand(deviceName string, filename string, socketName string) []s
 	// Replace placeholders in each parsed argument to preserve spaces in substituted values
 	for i, arg := range templateArgs {
 		arg = strings.ReplaceAll(arg, "%d", deviceName)
-		arg = strings.ReplaceAll(arg, "%f", filename)
 		arg = strings.ReplaceAll(arg, "%s", socketName)
 		templateArgs[i] = arg
 	}

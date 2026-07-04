@@ -24,7 +24,7 @@ type PlaybackServer interface {
 type playbackServer struct {
 	ctx             *context.Context
 	datastore       model.DataStore
-	playbackDevices []playbackDevice
+	playbackDevices []*playbackDevice
 }
 
 // GetInstance returns the playback-server singleton
@@ -55,26 +55,26 @@ func (ps *playbackServer) Run(ctx context.Context) error {
 	return nil
 }
 
-func (ps *playbackServer) initDeviceStatus(ctx context.Context, devices []conf.AudioDeviceDefinition, defaultDevice string) ([]playbackDevice, error) {
-	pbDevices := make([]playbackDevice, max(1, len(devices)))
+func (ps *playbackServer) initDeviceStatus(ctx context.Context, devices []conf.AudioDeviceDefinition, defaultDevice string) ([]*playbackDevice, error) {
+	pbDevices := make([]*playbackDevice, max(1, len(devices)))
 	defaultDeviceFound := false
 
 	if defaultDevice == "" {
 		// if there are no devices given and no default device, we create a synthetic device named "auto"
 		if len(devices) == 0 {
-			pbDevices[0] = *NewPlaybackDevice(ctx, ps, "auto", "auto")
+			pbDevices[0] = NewPlaybackDevice(ctx, ps, "auto", "auto")
 		}
 
 		// if there is but only one entry and no default given, just use that.
 		if len(devices) == 1 {
 			if len(devices[0]) != 2 {
-				return []playbackDevice{}, fmt.Errorf("audio device definition ought to contain 2 fields, found: %d ", len(devices[0]))
+				return []*playbackDevice{}, fmt.Errorf("audio device definition ought to contain 2 fields, found: %d ", len(devices[0]))
 			}
-			pbDevices[0] = *NewPlaybackDevice(ctx, ps, devices[0][0], devices[0][1])
+			pbDevices[0] = NewPlaybackDevice(ctx, ps, devices[0][0], devices[0][1])
 		}
 
 		if len(devices) > 1 {
-			return []playbackDevice{}, fmt.Errorf("number of audio device found is %d, but no default device defined. Set Jukebox.Default", len(devices))
+			return []*playbackDevice{}, fmt.Errorf("number of audio device found is %d, but no default device defined. Set Jukebox.Default", len(devices))
 		}
 
 		pbDevices[0].Default = true
@@ -83,10 +83,10 @@ func (ps *playbackServer) initDeviceStatus(ctx context.Context, devices []conf.A
 
 	for idx, audioDevice := range devices {
 		if len(audioDevice) != 2 {
-			return []playbackDevice{}, fmt.Errorf("audio device definition ought to contain 2 fields, found: %d ", len(audioDevice))
+			return []*playbackDevice{}, fmt.Errorf("audio device definition ought to contain 2 fields, found: %d ", len(audioDevice))
 		}
 
-		pbDevices[idx] = *NewPlaybackDevice(ctx, ps, audioDevice[0], audioDevice[1])
+		pbDevices[idx] = NewPlaybackDevice(ctx, ps, audioDevice[0], audioDevice[1])
 
 		if audioDevice[0] == defaultDevice {
 			pbDevices[idx].Default = true
@@ -95,7 +95,7 @@ func (ps *playbackServer) initDeviceStatus(ctx context.Context, devices []conf.A
 	}
 
 	if !defaultDeviceFound {
-		return []playbackDevice{}, fmt.Errorf("default device name not found: %s ", defaultDevice)
+		return []*playbackDevice{}, fmt.Errorf("default device name not found: %s ", defaultDevice)
 	}
 	return pbDevices, nil
 }
@@ -103,7 +103,7 @@ func (ps *playbackServer) initDeviceStatus(ctx context.Context, devices []conf.A
 func (ps *playbackServer) getDefaultDevice() (*playbackDevice, error) {
 	for idx := range ps.playbackDevices {
 		if ps.playbackDevices[idx].Default {
-			return &ps.playbackDevices[idx], nil
+			return ps.playbackDevices[idx], nil
 		}
 	}
 	return nil, fmt.Errorf("no default device found")

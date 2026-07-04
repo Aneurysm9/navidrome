@@ -771,7 +771,11 @@ func setViperDefaults() {
 	viper.SetDefault("indexgroups", "A B C D E F G H I J K L M N O P Q R S T U V W X-Z(XYZ) [Unknown]([)")
 	viper.SetDefault("ffmpegpath", "")
 	viper.SetDefault("mpvpath", "")
-	viper.SetDefault("mpvcmdtemplate", "mpv --audio-device=%d --no-audio-display %f --input-ipc-server=%s")
+	// The jukebox drives a single, persistent mpv over the IPC: it starts idle
+	// (no %f - tracks are loaded via the socket) and uses --gapless-audio for
+	// seamless transitions. Custom templates must drop the old %f placeholder
+	// and add --idle/--gapless-audio.
+	viper.SetDefault("mpvcmdtemplate", "mpv --audio-device=%d --no-audio-display --no-terminal --idle=yes --gapless-audio=yes --input-ipc-server=%s")
 	viper.SetDefault("coverartpriority", "cover.*, folder.*, front.*, embedded, external")
 	viper.SetDefault("coverartquality", 75)
 	viper.SetDefault("enablewebpencoding", false)
